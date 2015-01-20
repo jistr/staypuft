@@ -23,8 +23,23 @@ module Actions
         end
 
         def run
+          host_id = input.fetch(:host_id)
+
+          # try puppetrun 3 times
+          result = false
+          tries = 0
+          while !result && tries < 3
+            result = ::Host.find(host_id).puppetrun!
+            tries += 1
+          end
+
+          unless result
+            fail(::Staypuft::Exception, "Puppet run failed for host: #{host_id}")
+          end
+
           output[:executed_at] = DateTime.now.iso8601
-          ::Host.find(input.fetch(:host_id)).puppetrun!
+          output[:tries] = tries
+          output[:result] = result
         end
 
       end
